@@ -2,12 +2,12 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	_ "github.com/mattn/go-sqlite3"
 	"strconv"
 	"strings"
-	"errors"
 )
 
 var db *sql.DB
@@ -78,7 +78,7 @@ func createWallet(user int64, currId int64, ammount int64) {
 }
 
 func getClosest(memberList []*discordgo.Member,
-	search string, i int) *discordgo.Member{
+	search string, i int) *discordgo.Member {
 	//search both usernames and nicks in current server
 	var acList []*discordgo.Member
 	//makes it's size 0 to know when nothing was found
@@ -98,7 +98,7 @@ func getClosest(memberList []*discordgo.Member,
 	} else if len(acList) == 0 {
 		//nothing fully matched, give closest
 		return memberList[0]
-	} else if i==len(search)-1 {
+	} else if i == len(search)-1 {
 		//ran out of things to check with
 		return memberList[0]
 	} else {
@@ -112,21 +112,21 @@ func sendMoney(source int64, target int64,
 	currencyID int64, ammount int64) error {
 	/* database interaction, returns an error if the transaction
 	*  cannot happen, supposes both accounts have a wallet.
-	*/
+	 */
 	var founds int64
 	query := "SELECT ammount FROM wallet WHERE owner=? AND currency=?"
 	err := db.QueryRow(query, source, currencyID).Scan(&founds)
 	if founds < ammount {
 		return errors.New("Not enough founds")
 	} else {
-		query = "UPDATE wallet SET ammount=ammount-? WHERE"+
+		query = "UPDATE wallet SET ammount=ammount-? WHERE" +
 			" owner=? AND currency=?"
 		_, err = db.Exec(query, ammount, source, currencyID)
 		if err != nil {
 			fmt.Print(err.Error())
 			return err
 		}
-		query = "UPDATE wallet SET ammount=ammount+? WHERE"+
+		query = "UPDATE wallet SET ammount=ammount+? WHERE" +
 			" owner=? AND currency=?"
 		_, err = db.Exec(query, ammount, target, currencyID)
 		return nil
@@ -144,16 +144,16 @@ func addCirculation(ammount int64, currencyID int64) {
 
 func helpMe(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if command(m.Content, "k!help") {
-		message := "Hello I am the kaisebot! Here are my commands and"+
-		"how to use me! :D\n"+
-		"```"+
-		"k!help: gives you this message\n"+
-		"k!transfer <user> <currency> <ammount>: sends some of your"+
-		" money to the user you want\n"+
-		"k!mons <currency> <ammount> issues some of your currency"+
-		" beware of inflation!\n"+
-		"k!regCurr <currency>: Registers your very own currency!"+
-		"```"
+		message := "Hello I am the kaisebot! Here are my commands and" +
+			"how to use me! :D\n" +
+			"```" +
+			"k!help: gives you this message\n" +
+			"k!transfer <user> <currency> <ammount>: sends some of your" +
+			" money to the user you want\n" +
+			"k!mons <currency> <ammount> issues some of your currency" +
+			" beware of inflation!\n" +
+			"k!regCurr <currency>: Registers your very own currency!" +
+			"```"
 		_, err := s.ChannelMessageSend(m.ChannelID, message)
 		if err != nil {
 			fmt.Print(err.Error())
@@ -163,7 +163,7 @@ func helpMe(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 func viewWallet(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if command(m.Content, "k!wallet") {
-		message := fmt.Sprintf("Here's your wallet %s!\n",m.Author.Username)
+		message := fmt.Sprintf("Here's your wallet %s!\n", m.Author.Username)
 		userID, err := strconv.ParseInt(m.Author.ID, 10, 64)
 		if err != nil {
 			fmt.Print(err.Error())
@@ -178,9 +178,9 @@ func viewWallet(s *discordgo.Session, m *discordgo.MessageCreate) {
 		defer rows.Close()
 		for rows.Next() {
 			var (
-				currencyID int64
+				currencyID   int64
 				currencyName string
-				ammount int64
+				ammount      int64
 			)
 			if err := rows.Scan(&currencyID, &ammount); err != nil {
 				fmt.Print(err.Error())
@@ -190,7 +190,7 @@ func viewWallet(s *discordgo.Session, m *discordgo.MessageCreate) {
 			if err != nil {
 				fmt.Print(err.Error())
 			}
-			message += fmt.Sprintf("%s\t%d\n",currencyName, ammount)
+			message += fmt.Sprintf("%s\t%d\n", currencyName, ammount)
 		}
 		_, err = s.ChannelMessageSend(m.ChannelID, message)
 		if err != nil {
@@ -215,7 +215,7 @@ func transferFounds(s *discordgo.Session, m *discordgo.MessageCreate) {
 			fmt.Print(err.Error())
 			return
 		}
-		targetUser := getClosest(guild.Members,strings.ToLower(command[1]), 0)
+		targetUser := getClosest(guild.Members, strings.ToLower(command[1]), 0)
 		target, err := strconv.ParseInt(targetUser.User.ID, 10, 64)
 		if err != nil {
 			fmt.Print(err.Error())
@@ -242,7 +242,7 @@ func transferFounds(s *discordgo.Session, m *discordgo.MessageCreate) {
 		if !hasWallet(target, currencyID) {
 			createWallet(target, currencyID, 0)
 		}
-		err = sendMoney(originalUser, target, currencyID ,ammount)
+		err = sendMoney(originalUser, target, currencyID, ammount)
 		if err == nil {
 			message := fmt.Sprintf("%d %ss have been sent to %s! "+
 				"Say thanks to %s!", ammount, command[2],
@@ -253,7 +253,7 @@ func transferFounds(s *discordgo.Session, m *discordgo.MessageCreate) {
 				return
 			}
 		} else {
-			message := "I wasn't able to do the transfer,"+
+			message := "I wasn't able to do the transfer," +
 				" something went wrong! :("
 			_, err = s.ChannelMessageSend(m.ChannelID, message)
 			if err != nil {

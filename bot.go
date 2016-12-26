@@ -236,6 +236,9 @@ func transferFounds(s *discordgo.Session, m *discordgo.MessageCreate) {
 			fmt.Print(err.Error())
 			return
 		}
+		if ammount < 0 {
+			ammount *= -1
+		}
 		if !hasWallet(originalUser, currencyID) {
 			createWallet(originalUser, currencyID, 0)
 		}
@@ -291,6 +294,9 @@ func issueCurrency(s *discordgo.Session, m *discordgo.MessageCreate) {
 				return
 			}
 			return
+		}
+		if ammount<0 {
+			ammount *= -1
 		}
 		currId, err := getCurrencyIdFromName(currName)
 		if err == sql.ErrNoRows {

@@ -353,8 +353,8 @@ func issueCurrency(s *discordgo.Session, m *discordgo.MessageCreate) {
 			fmt.Print(err.Error())
 			return
 		}
-		message := fmt.Sprintf("*carefully adds %d", ammount) +
-			"into your wallet* ;)"
+		message := fmt.Sprintf("*Carefully adds %d", ammount) +
+			" into your wallet* ;)"
 		_, err = s.ChannelMessageSend(m.ChannelID, message)
 	}
 }

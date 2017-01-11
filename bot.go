@@ -158,6 +158,7 @@ func helpMe(s *discordgo.Session, m *discordgo.MessageCreate) {
 			"how to use me! :D\n" +
 			"```" +
 			"k!help: gives you this message\n" +
+			"k!wallet: tells you your current founds for each currency!\n" +
 			"k!transfer <user> <currency> <ammount>: sends some of your" +
 			" money to the user you want\n" +
 			"k!mons <currency> <ammount> issues some of your currency" +

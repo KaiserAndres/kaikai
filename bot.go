@@ -14,8 +14,10 @@ import (
 var (
 	db            *sql.DB
 	noFoundsError error          = errors.New("Not enough founds")
-	celciusExp    *regexp.Regexp = regexp.MustCompile("(-?)(\\d)+C")
-	fahrExp       *regexp.Regexp = regexp.MustCompile("(-?)(\\d)+F")
+	celciusExp    *regexp.Regexp = regexp.MustCompile("(-?)(\\d(.\\d)?)+(C|c)")
+	fahrExp       *regexp.Regexp = regexp.MustCompile("(-?)(\\d(.\\d)?)+(F|f)")
+	conv          bool           = false
+	version       float64        = 1.1
 )
 
 func main() {
@@ -40,6 +42,7 @@ func main() {
 	discord.AddHandler(viewWallet)
 	discord.AddHandler(helpMe)
 	discord.AddHandler(translate)
+	discord.AddHandler(intrusionSwitch)
 	err = discord.Open()
 	if err != nil {
 		fmt.Print(err.Error())
@@ -159,7 +162,9 @@ func helpMe(s *discordgo.Session, m *discordgo.MessageCreate) {
 			" money to the user you want\n" +
 			"k!mons <currency> <ammount> issues some of your currency" +
 			" beware of inflation!\n" +
-			"k!regCurr <currency>: Registers your very own currency!" +
+			"k!regCurr <currency>: Registers your very own currency!\n" +
+			"k!annoy: will turn on or off automatic unit conversion!\n" +
+			"k!version: will display the current bot version! \n" +
 			"```"
 		_, err := s.ChannelMessageSend(m.ChannelID, message)
 		if err != nil {
@@ -427,14 +432,27 @@ func registerCurrency(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 }
 
+func versionCheck(s *discordgo.Session, m *discordgo.MessageCreate) {
+	if command(m.Content, "k!version") {
+		message := fmt.Sprintf("I am version %f :blush:")
+		s.ChannelMessageSend(m.ChannelID, message)
+	}
+}
+
+func intrusionSwitch(s *discordgo.Session, m *discordgo.MessageCreate) {
+	if command(m.Content, "k!annoy") {
+		conv = !conv
+		message := fmt.Sprintf("Automatic unit conversion set to: %t", conv)
+		s.ChannelMessageSend(m.ChannelID, message)
+	}
+}
+
 func translate(s *discordgo.Session, m *discordgo.MessageCreate) {
-	if m.Author.Bot {
+	if m.Author.Bot || !conv {
 		return
 	}
 	cFound := celciusExp.FindAllString(m.Content, -1)
 	fFound := fahrExp.FindAllString(m.Content, -1)
-	fmt.Println(cFound)
-	fmt.Println(fFound)
 	message := ""
 	if len(cFound)+len(fFound) > 0 {
 		message = "Hello, I'll convert this to other units :D\n"
@@ -442,7 +460,7 @@ func translate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	if len(cFound) > 0 {
 		for _, n := range cFound {
-			num, err := strconv.ParseInt(n[:len(n)-1], 10, 64)
+			num, err := strconv.ParseFloat(n[:len(n)-1], 64)
 			if err != nil {
 				fmt.Print(err.Error())
 				return
@@ -452,7 +470,7 @@ func translate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 	if len(fFound) > 0 {
 		for _, n := range fFound {
-			num, err := strconv.ParseInt(n[:len(n)-1], 10, 64)
+			num, err := strconv.ParseFloat(n[:len(n)-1], 64)
 			if err != nil {
 				fmt.Print(err.Error())
 				return
@@ -465,12 +483,12 @@ func translate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 }
 
-func fToc(n int64) float64 {
-	return (float64(n) - 32.0) * 5.0 / 9.0
+func fToc(n float64) float64 {
+	return (n - 32.0) * 5.0 / 9.0
 }
 
-func cTof(n int64) float64 {
-	return (9.0/5.0)*float64(n) + 32.0
+func cTof(n float64) float64 {
+	return (9.0/5.0)*n + 32.0
 }
 
 func sayFuckU(s *discordgo.Session, m *discordgo.MessageCreate) {

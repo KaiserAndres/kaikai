@@ -6,11 +6,17 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	_ "github.com/mattn/go-sqlite3"
+	"regexp"
 	"strconv"
 	"strings"
 )
 
-var db *sql.DB
+var (
+	db            *sql.DB
+	noFoundsError error          = errors.New("Not enough founds")
+	celciusExp    *regexp.Regexp = regexp.MustCompile("(-?)(\\d)+C")
+	fahrExp       *regexp.Regexp = regexp.MustCompile("(-?)(\\d)+F")
+)
 
 func main() {
 	token := "MjA5MDcwNjk5MDY5ODMzMjE3.Cznkrw.WpgrVava7-U8Cg_-0CIkdVj3wMI"
@@ -33,6 +39,7 @@ func main() {
 	discord.AddHandler(transferFounds)
 	discord.AddHandler(viewWallet)
 	discord.AddHandler(helpMe)
+	discord.AddHandler(translate)
 	err = discord.Open()
 	if err != nil {
 		fmt.Print(err.Error())
@@ -117,7 +124,7 @@ func sendMoney(source int64, target int64,
 	query := "SELECT ammount FROM wallet WHERE owner=? AND currency=?"
 	err := db.QueryRow(query, source, currencyID).Scan(&founds)
 	if founds < ammount {
-		return errors.New("Not enough founds")
+		return noFoundsError
 	} else {
 		query = "UPDATE wallet SET ammount=ammount-? WHERE" +
 			" owner=? AND currency=?"
@@ -255,6 +262,13 @@ func transferFounds(s *discordgo.Session, m *discordgo.MessageCreate) {
 				fmt.Print(err.Error())
 				return
 			}
+		} else if err == noFoundsError {
+			message := "It appears you don't have enough moeny" +
+				" fuck capitalism >:C"
+			_, err = s.ChannelMessageSend(m.ChannelID, message)
+			if err != nil {
+				fmt.Print(err.Error())
+			}
 		} else {
 			message := "I wasn't able to do the transfer," +
 				" something went wrong! :("
@@ -295,7 +309,7 @@ func issueCurrency(s *discordgo.Session, m *discordgo.MessageCreate) {
 			}
 			return
 		}
-		if ammount<0 {
+		if ammount < 0 {
 			ammount *= -1
 		}
 		currId, err := getCurrencyIdFromName(currName)
@@ -411,6 +425,52 @@ func registerCurrency(s *discordgo.Session, m *discordgo.MessageCreate) {
 			currName, user.ID, 0)
 		s.ChannelMessageSend(m.ChannelID, "Registering "+currName+"!")
 	}
+}
+
+func translate(s *discordgo.Session, m *discordgo.MessageCreate) {
+	if m.Author.Bot {
+		return
+	}
+	cFound := celciusExp.FindAllString(m.Content, -1)
+	fFound := fahrExp.FindAllString(m.Content, -1)
+	fmt.Println(cFound)
+	fmt.Println(fFound)
+	message := ""
+	if len(cFound)+len(fFound) > 0 {
+		message = "Hello, I'll convert this to other units :D\n"
+	}
+
+	if len(cFound) > 0 {
+		for _, n := range cFound {
+			num, err := strconv.ParseInt(n[:len(n)-1], 10, 64)
+			if err != nil {
+				fmt.Print(err.Error())
+				return
+			}
+			message += fmt.Sprintf("%s translates to %fF\n", n, cTof(num))
+		}
+	}
+	if len(fFound) > 0 {
+		for _, n := range fFound {
+			num, err := strconv.ParseInt(n[:len(n)-1], 10, 64)
+			if err != nil {
+				fmt.Print(err.Error())
+				return
+			}
+			message += fmt.Sprintf("%s translates to %fC\n", n, fToc(num))
+		}
+	}
+	if len(message) > 0 {
+		s.ChannelMessageSend(m.ChannelID, message)
+	}
+}
+
+func fToc(n int64) float64 {
+	return (float64(n) - 32.0) * 5.0 / 9.0
+}
+
+func cTof(n int64) float64 {
+	return (9.0/5.0)*float64(n) + 32.0
 }
 
 func sayFuckU(s *discordgo.Session, m *discordgo.MessageCreate) {

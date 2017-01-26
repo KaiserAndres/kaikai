@@ -13,11 +13,11 @@ import (
 
 var (
 	db            *sql.DB
-	noFoundsError error          = errors.New("Not enough founds")
-	celciusExp    *regexp.Regexp = regexp.MustCompile("(\\s|^)(-?)(\\d(.\\d)?)+(C|c)")
-	fahrExp       *regexp.Regexp = regexp.MustCompile("(\\s|^)(-?)(\\d(.\\d)?)+(F|f)")
-	conv          bool           = false
-	version       float64        = 1.2
+	noFoundsError error           = errors.New("Not enough founds")
+	celciusExp    *regexp.Regexp  = regexp.MustCompile(magicRegexMaker("c"))
+	fahrExp       *regexp.Regexp  = regexp.MustCompile(magicRegexMaker("f"))
+	conv          map[string]bool = make(map[string]bool)
+	version       float64         = 1.3
 )
 
 func main() {
@@ -54,6 +54,11 @@ func main() {
 	// Simple way to keep program running until CTRL-C is pressed.
 	<-make(chan struct{})
 	return
+}
+
+func magicRegexMaker(c string) string {
+	return fmt.Sprintf("(\\s|^)(-?)(\\d(.\\d)?)+(%s|%s)", c,
+		strings.ToTitle(c))
 }
 
 func command(s string, c string) bool {
@@ -443,14 +448,23 @@ func versionCheck(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 func intrusionSwitch(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if command(m.Content, "k!annoy") {
-		conv = !conv
-		message := fmt.Sprintf("Automatic unit conversion set to: %t", conv)
+		if _, t := conv[m.ChannelID]; t == false {
+			conv[m.ChannelID] = false
+		}
+		conv[m.ChannelID] = !conv[m.ChannelID]
+		channel, err := s.Channel(m.ChannelID)
+		if err != nil {
+			fmt.Printf(err.Error())
+			return
+		}
+		message := fmt.Sprintf("Automatic unit conversion for "+
+			"channel %s set to: %t", channel.Name, conv[m.ChannelID])
 		s.ChannelMessageSend(m.ChannelID, message)
 	}
 }
 
 func translate(s *discordgo.Session, m *discordgo.MessageCreate) {
-	if m.Author.Bot || !conv {
+	if m.Author.Bot || !conv[m.ChannelID] {
 		return
 	}
 	cFound := celciusExp.FindAllString(m.Content, -1)

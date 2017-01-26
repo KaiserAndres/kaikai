@@ -14,10 +14,10 @@ import (
 var (
 	db            *sql.DB
 	noFoundsError error          = errors.New("Not enough founds")
-	celciusExp    *regexp.Regexp = regexp.MustCompile("(-?)(\\d(.\\d)?)+(C|c)")
-	fahrExp       *regexp.Regexp = regexp.MustCompile("(-?)(\\d(.\\d)?)+(F|f)")
+	celciusExp    *regexp.Regexp = regexp.MustCompile("(\\s|^)(-?)(\\d(.\\d)?)+(C|c)")
+	fahrExp       *regexp.Regexp = regexp.MustCompile("(\\s|^)(-?)(\\d(.\\d)?)+(F|f)")
 	conv          bool           = false
-	version       float64        = 1.1
+	version       float64        = 1.2
 )
 
 func main() {
@@ -43,6 +43,7 @@ func main() {
 	discord.AddHandler(helpMe)
 	discord.AddHandler(translate)
 	discord.AddHandler(intrusionSwitch)
+	discord.AddHandler(versionCheck)
 	err = discord.Open()
 	if err != nil {
 		fmt.Print(err.Error())
@@ -435,7 +436,7 @@ func registerCurrency(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 func versionCheck(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if command(m.Content, "k!version") {
-		message := fmt.Sprintf("I am version %f :blush:")
+		message := fmt.Sprintf("I am version %.1f :blush:", version)
 		s.ChannelMessageSend(m.ChannelID, message)
 	}
 }
@@ -461,22 +462,24 @@ func translate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	if len(cFound) > 0 {
 		for _, n := range cFound {
-			num, err := strconv.ParseFloat(n[:len(n)-1], 64)
+			num, err := strconv.ParseFloat(strings.Trim(
+				n[:len(n)-1], " "), 64)
 			if err != nil {
 				fmt.Print(err.Error())
 				return
 			}
-			message += fmt.Sprintf("%s translates to %fF\n", n, cTof(num))
+			message += fmt.Sprintf("%s translates to %.3fF\n", n, cTof(num))
 		}
 	}
 	if len(fFound) > 0 {
 		for _, n := range fFound {
-			num, err := strconv.ParseFloat(n[:len(n)-1], 64)
+			num, err := strconv.ParseFloat(
+				strings.Trim(n[:len(n)-1], " "), 64)
 			if err != nil {
 				fmt.Print(err.Error())
 				return
 			}
-			message += fmt.Sprintf("%s translates to %fC\n", n, fToc(num))
+			message += fmt.Sprintf("%s translates to %.3fC\n", n, fToc(num))
 		}
 	}
 	if len(message) > 0 {

@@ -16,8 +16,11 @@ var (
 	noFoundsError error           = errors.New("Not enough founds")
 	celciusExp    *regexp.Regexp  = regexp.MustCompile(magicRegexMaker("c"))
 	fahrExp       *regexp.Regexp  = regexp.MustCompile(magicRegexMaker("f"))
+	metExp        *regexp.Regexp  = regexp.MustCompile(magicRegexMaker("m"))
+	ftExp         *regexp.Regexp  = regexp.MustCompile(startOrNeg + "\\d(\"|ft)(\\d(')?)?($|\\s)")
 	conv          map[string]bool = make(map[string]bool)
 	version       float64         = 1.3
+	startOrNeg    string          = "(\\s|^)(-?)"
 )
 
 func main() {
@@ -57,7 +60,7 @@ func main() {
 }
 
 func magicRegexMaker(c string) string {
-	return fmt.Sprintf("(\\s|^)(-?)(\\d(.\\d)?)+(%s|%s)", c,
+	return fmt.Sprintf(startOrNeg+"(\\d(.\\d)?)+(%s|%s)($|\\s)", c,
 		strings.ToTitle(c))
 }
 

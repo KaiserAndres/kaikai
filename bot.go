@@ -6,16 +6,16 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	_ "github.com/mattn/go-sqlite3"
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
-	"math"
 )
 
 const (
-	version    float64         = 1.3
-	startOrNeg string          = "(\\s|^)(-?)"
-	end        string          = "(\\s|$)"
+	version    float64 = 1.3
+	startOrNeg string  = "(\\s|^)(-?)"
+	end        string  = "(\\s|$)"
 )
 
 var (
@@ -26,7 +26,7 @@ var (
 	metExp        *regexp.Regexp = regexp.MustCompile(magicRegexMaker("m"))
 	ftExp         *regexp.Regexp = regexp.MustCompile(
 		startOrNeg + "\\d+(\"|ft)(\\d*(')?)?" + end)
-	conv       map[string]bool = make(map[string]bool)
+	conv map[string]bool = make(map[string]bool)
 )
 
 func main() {
@@ -508,7 +508,7 @@ func translate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 	}
 	if len(fAndiFound) > 0 {
-		for _, n := range(fAndiFound) {
+		for _, n := range fAndiFound {
 			var (
 				ft float64 = 0.0
 				in float64 = 0.0
@@ -525,7 +525,7 @@ func translate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				if strings.Contains(inS, "'") {
 					inS = inS[:len(inS)-1]
 				}
-				in, err = strconv.ParseFloat(inS,64)
+				in, err = strconv.ParseFloat(inS, 64)
 			}
 			message += fmt.Sprintf(
 				"%s translates to %.3f\n", n, fAndiTom(ft, in))
@@ -555,12 +555,12 @@ func translate(s *discordgo.Session, m *discordgo.MessageCreate) {
 }
 
 func fAndiTom(feet, inch float64) float64 {
-	return feet * 0.305 + inch * 0.025
+	return feet*0.305 + inch*0.025
 }
 
 func mToi(n float64) int {
-	in := n*39.37
-	if d, f := math.Modf(in); f>0.5 {
+	in := n * 39.37
+	if d, f := math.Modf(in); f > 0.5 {
 		return int(d) + 1
 	} else {
 		return int(d)

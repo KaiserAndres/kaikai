@@ -13,9 +13,10 @@ import (
 )
 
 const (
-	version    float64 = 1.3
+	version    float64 = 1.4
 	startOrNeg string  = "(\\s|^)(-?)"
 	end        string  = "(\\s|$)"
+	dev string = "268908682266411009"
 )
 
 var (
@@ -53,6 +54,7 @@ func main() {
 	discord.AddHandler(translate)
 	discord.AddHandler(intrusionSwitch)
 	discord.AddHandler(versionCheck)
+	discord.AddHandler(report)
 	err = discord.Open()
 	if err != nil {
 		fmt.Print(err.Error())
@@ -181,6 +183,9 @@ func helpMe(s *discordgo.Session, m *discordgo.MessageCreate) {
 			"k!regCurr <currency>: Registers your very own currency!\n" +
 			"k!annoy: will turn on or off automatic unit conversion!\n" +
 			"k!version: will display the current bot version! \n" +
+			"k!report <screenshot>: will tell my developer there " +
+			"was a problem with me, please send them any issue " +
+			"there is, no matter how small!\n" +
 			"```"
 		_, err := s.ChannelMessageSend(m.ChannelID, message)
 		if err != nil {
@@ -577,6 +582,32 @@ func fToc(n float64) float64 {
 
 func cTof(n float64) float64 {
 	return (9.0/5.0)*n + 32.0
+}
+
+func report(s *discordgo.Session, m *discordgo.MessageCreate) {
+	if command(m.Content, "k!report") {
+		content := m.Attachments
+		if len(content) != 1 {
+			_, err := s.ChannelMessageSend(m.ChannelID,
+				"Please provide a screenshot.")
+			if err != nil {
+				fmt.Print(err.Error())
+			}
+			return
+		}
+
+		_, err := s.ChannelMessageSend(dev, content[0].URL)
+		if err != nil {
+			fmt.Print(err.Error())
+			return
+		}
+		_, err = s.ChannelMessageSend(m.ChannelID,
+			"I have notified Kaiser of your issue")
+		if err != nil {
+			fmt.Print(err.Error())
+			return
+		}
+	}
 }
 
 func sayFuckU(s *discordgo.Session, m *discordgo.MessageCreate) {

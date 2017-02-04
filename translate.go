@@ -19,7 +19,7 @@ var (
 	fahrExp    *regexp.Regexp = regexp.MustCompile(magicRegexMaker("f"))
 	metExp     *regexp.Regexp = regexp.MustCompile(magicRegexMaker("m"))
 	ftExp      *regexp.Regexp = regexp.MustCompile(
-		startOrNeg + "\\d+(\"|ft)(\\d*(')?)?" + end)
+		startOrNeg + "\\d+('|ft)(\\d*(\")?)?" + end)
 	conv map[string]bool = make(map[string]bool)
 )
 
@@ -36,7 +36,7 @@ func mToi(n float64) int {
 	}
 }
 
-func mTof(n float64) int {
+func mTof(n float64) int{
 	return int(n * 3.281)
 }
 
@@ -111,7 +111,7 @@ func translate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				ft float64 = 0.0
 				in float64 = 0.0
 			)
-			parts := strings.Split(n, "\"")
+			parts := strings.Split(n, "'")
 			ft, err := strconv.ParseFloat(
 				strings.Trim(parts[0], " "), 64)
 			if err != nil {
@@ -120,7 +120,7 @@ func translate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			}
 			if len(parts) == 2 {
 				inS := strings.Trim(parts[1], " ")
-				if strings.Contains(inS, "'") {
+				if strings.Contains(inS, "\"") {
 					inS = inS[:len(inS)-1]
 				}
 				in, err = strconv.ParseFloat(inS, 64)
@@ -138,13 +138,13 @@ func translate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				return
 			}
 			feet := mTof(num)
-			inch := mToi(num - float64(feet)*0.305)
+			inch := mToi(num - float64(feet)/3.281)
 			fs := ""
 			if inch != 0 {
-				fs = fmt.Sprintf("%d'", inch)
+				fs = fmt.Sprintf("%d\"", inch)
 			}
 			message += fmt.Sprintf(
-				"%s translates to %d\""+fs+"\n", n, feet)
+				"%s translates to %d'"+fs+"\n", n, feet)
 		}
 	}
 	if len(message) > 0 {

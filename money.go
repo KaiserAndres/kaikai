@@ -10,6 +10,10 @@ import (
 	"strings"
 )
 
+var (
+	noFoundsError error = errors.New("Not enough founds")
+)
+
 func getCurrencyIdFromName(name string) (int64, error) {
 	// returns the ID of the questioned currency
 	var currencyID int64
@@ -64,16 +68,6 @@ func sendMoney(source int64, target int64,
 		return nil
 	}
 }
-
-func addCirculation(ammount int64, currencyID int64) {
-	query := "UPDATE currencies SET circulation=circulation+? WHERE id=?"
-	_, err := db.Exec(query, ammount, currencyID)
-	if err != nil {
-		fmt.Print(err.Error())
-	}
-	return
-}
-
 
 func addCirculation(ammount int64, currencyID int64) {
 	query := "UPDATE currencies SET circulation=circulation+? WHERE id=?"
@@ -342,4 +336,3 @@ func registerCurrency(s *discordgo.Session, m *discordgo.MessageCreate) {
 		s.ChannelMessageSend(m.ChannelID, "Registering "+currName+"!")
 	}
 }
-

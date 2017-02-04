@@ -1,26 +1,26 @@
 package main
 
 import (
+	"fmt"
+	"github.com/bwmarrin/discordgo"
 	"math"
 	"regexp"
 	"strconv"
 	"strings"
-	"fmt"
-	"github.com/bwmarrin/discordgo"
 )
 
-
 const (
-	startOrNeg string  = "(\\s|^)(-?)"
-	end        string  = "(\\s|$)"
+	startOrNeg string = "(\\s|^)(-?)"
+	end        string = "(\\s|$)"
 )
 
 var (
-	celciusExp    *regexp.Regexp = regexp.MustCompile(magicRegexMaker("c"))
-	fahrExp       *regexp.Regexp = regexp.MustCompile(magicRegexMaker("f"))
-	metExp        *regexp.Regexp = regexp.MustCompile(magicRegexMaker("m"))
-	ftExp         *regexp.Regexp = regexp.MustCompile(
+	celciusExp *regexp.Regexp = regexp.MustCompile(magicRegexMaker("c"))
+	fahrExp    *regexp.Regexp = regexp.MustCompile(magicRegexMaker("f"))
+	metExp     *regexp.Regexp = regexp.MustCompile(magicRegexMaker("m"))
+	ftExp      *regexp.Regexp = regexp.MustCompile(
 		startOrNeg + "\\d+(\"|ft)(\\d*(')?)?" + end)
+	conv map[string]bool = make(map[string]bool)
 )
 
 func fAndiTom(feet, inch float64) float64 {
@@ -151,4 +151,3 @@ func translate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		s.ChannelMessageSend(m.ChannelID, message)
 	}
 }
-
